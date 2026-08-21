@@ -89,7 +89,10 @@ export function createFakeModelClient(script: ScriptedTurn[]): FakeModelClient {
       }
 
       cursor += 1;
-      calls.push(params);
+      // Snapshot rather than alias: the loop keeps mutating its message array
+      // after the call, so a stored reference would show later state and make
+      // assertions about "what was sent this turn" quietly wrong.
+      calls.push({ ...params, messages: [...params.messages], tools: [...params.tools] });
 
       const message = buildMessage(turn);
 
