@@ -96,6 +96,20 @@ npm run eval      # opt-in; spends real API credit
 
 The browser suite runs against demo mode — scripted model, fixture upstreams — so it is deterministic and free. The MCP server underneath is real and does its real mapping work, so what's asserted is genuine output. Without that, one e2e run would spend the entire daily Perenual budget.
 
+### What the evals check
+
+The eval suite inverts that: **real Claude, fixture upstreams.** The variable under test is what the model does, so holding the data constant makes a failure mean something — and it spends none of the Perenual budget.
+
+It asserts behaviour rather than prose quality:
+
+- A companion question **reaches for `companion_check`**, and the answer names the family behind the verdict.
+- Asked point-blank for a spacing figure, the answer **contains no measurement at all** — any digit followed by a length unit fails the case — and says the figure isn't published.
+- A timing question with no location **asks where the garden is** instead of calling `planting_window` on a guess.
+- With a location, it calls `planting_window` and **passes through the ERA5 caveat** when asked how reliable the date is.
+- A toxicity question is **looked up, not recalled**.
+
+Assertions are deterministic rather than model-judged, because the behaviours worth pinning are the checkable ones: a tool was called or it wasn't; a measurement appeared or it didn't. A judge would add cost and a second source of flakiness for no extra signal.
+
 ## Licence
 
 MIT. Data retrieved through the MCP server remains under its own sources' terms — see [plant-intel-mcp](https://github.com/wyattlindsey/plant-intel-mcp#sources-and-their-limits).
