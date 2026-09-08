@@ -39,5 +39,9 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11"
+  },
+  "_overrides_note": "fdir requires picomatch ^3||^4, but eslint-config-next pulls fast-glob@3 -> micromatch -> picomatch@2, which hoists to the root. The resulting tree is invalid and Linux npm ci rejects it while macOS tolerated it, so CI failed on every push. Remove this once eslint-config-next ships a fast-glob 3.3.2+.",
+  "overrides": {
+    "picomatch": "^4"
   }
 }
