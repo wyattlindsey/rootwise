@@ -24,12 +24,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # `npm install`, not `npm ci`: this repo depends on plant-intel-mcp over
-      # git, and a lockfile generated on macOS resolves a transitive picomatch
-      # tree that Linux's stricter `npm ci` rejects. Reverting to `npm ci` is
-      # the follow-up once plant-intel-mcp is published to npm and the git
-      # dependency goes away.
-      - run: npm install --no-audit --no-fund
+      - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test

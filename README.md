@@ -48,6 +48,8 @@ npm install
 npm run dev:demo     # scripted model + fixture data: no keys, no network
 ```
 
+The MCP server it hosts is a published package — [`plant-intel-mcp`](https://www.npmjs.com/package/plant-intel-mcp) — so it installs like any other dependency, and can be used on its own with any MCP client.
+
 For live answers you need two keys:
 
 ```bash
