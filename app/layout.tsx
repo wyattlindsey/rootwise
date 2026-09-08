@@ -17,7 +17,11 @@ export const metadata: Metadata = {
   description: "Gardening answers grounded in real horticultural data, with every tool call and source shown.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"
