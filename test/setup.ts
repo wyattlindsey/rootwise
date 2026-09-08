@@ -12,4 +12,11 @@ if (typeof document !== 'undefined') {
   afterEach(() => {
     cleanup();
   });
+
+  // jsdom implements no layout, so scrollIntoView does not exist. This is an
+  // environment gap rather than an app bug -- stub it rather than making the
+  // component defend against a browser API that is universally available.
+  Element.prototype.scrollIntoView ??= function scrollIntoView() {
+    /* no layout in jsdom */
+  };
 }

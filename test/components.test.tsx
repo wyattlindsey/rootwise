@@ -162,3 +162,19 @@ describe('MessageBubble', () => {
     expect(within(region).getByText('planting_window')).toBeInTheDocument();
   });
 });
+
+describe('ChatView demo mode', () => {
+  it('tells the visitor the conversation is recorded', async () => {
+    const { ChatView } = await import('@/components/ChatView');
+    render(<ChatView demoMode />);
+
+    expect(screen.getByRole('status')).toHaveTextContent(/replays one recorded conversation/i);
+  });
+
+  it('says nothing about demo mode when running live', async () => {
+    const { ChatView } = await import('@/components/ChatView');
+    render(<ChatView />);
+
+    expect(screen.queryByText(/replays one recorded conversation/i)).not.toBeInTheDocument();
+  });
+});

@@ -13,7 +13,7 @@ const SUGGESTIONS = [
   'How long is my growing season?',
 ];
 
-export function ChatView(): React.JSX.Element {
+export function ChatView({ demoMode = false }: { demoMode?: boolean }): React.JSX.Element {
   const { state, location, setLocation, apiKey, setApiKey, send, stop } = useChat();
   const [draft, setDraft] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -37,6 +37,18 @@ export function ChatView(): React.JSX.Element {
           Gardening answers grounded in real horticultural data. Every tool call and source is
           shown, and it will tell you when the data does not exist.
         </p>
+        {demoMode ? (
+          <p
+            role="status"
+            className="mt-2 rounded-lg border border-sky-500/40 bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:bg-sky-950/30 dark:text-sky-200"
+          >
+            <strong className="font-semibold">Demo mode.</strong> This deployment replays one
+            recorded conversation against fixture data, so every question returns the same answer.
+            The tool calls, sources, and caveats below are real output from the MCP server — only
+            the model is scripted.
+          </p>
+        ) : null}
+
         <div className="mt-2">
           <LocationPicker location={location} onChange={setLocation} />
         </div>
