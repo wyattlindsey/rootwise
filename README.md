@@ -112,7 +112,9 @@ It asserts behaviour rather than prose quality:
 - With a location, it calls `planting_window` and **passes through the ERA5 caveat** when asked how reliable the date is.
 - A toxicity question is **looked up, not recalled**.
 
-Assertions are deterministic rather than model-judged, because the behaviours worth pinning are the checkable ones: a tool was called or it wasn't; a measurement appeared or it didn't. A judge would add cost and a second source of flakiness for no extra signal.
+Assertions are deterministic rather than model-judged, because the behaviours worth pinning are the checkable ones: a tool was called or it wasn't; a spacing figure appeared or it didn't. A judge would add cost and a second source of flakiness for no extra signal.
+
+The assertions themselves have unit tests. The spacing check began as "no measurement anywhere in the answer" and failed a response that correctly refused to give spacing and then cited a published mature height of 152 cm — the exact behaviour the contract asks for. It is now sentence-scoped, and that real transcript is kept as a regression fixture. An eval that fails correct behaviour is worse than no eval, because it argues for breaking something that works.
 
 ## Licence
 

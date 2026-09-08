@@ -83,6 +83,9 @@ describe.runIf(enabled && hasKey)('behavioural evals', () => {
       for (const check of testCase.mustNotMatch ?? []) {
         expect(text, `${check.label}${context}`).not.toMatch(check.pattern);
       }
+      for (const check of testCase.mustNotSatisfy ?? []) {
+        expect(check.test(text), `${check.label}${context}`).toBe(false);
+      }
     } finally {
       await host.close();
     }

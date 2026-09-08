@@ -1,9 +1,16 @@
 import type { PromptLocation } from '@/lib/chat/system-prompt';
 
+import { statesSpacingMeasurement } from './assertions';
+
 export interface PatternCheck {
   /** Why this matters, shown when the case fails. */
   label: string;
   pattern: RegExp;
+}
+
+export interface Detector {
+  label: string;
+  test: (text: string) => boolean;
 }
 
 export interface EvalCase {
@@ -15,17 +22,11 @@ export interface EvalCase {
   mustNotCallTools?: string[];
   mustMatch?: PatternCheck[];
   mustNotMatch?: PatternCheck[];
+  /** Checks too nuanced for a single regex. */
+  mustNotSatisfy?: Detector[];
 }
 
 const MINNEAPOLIS: PromptLocation = { latitude: 44.98, longitude: -93.27 };
-
-/**
- * A measurement, not a number: any digit followed by a length unit. This is
- * what catches the failure the whole project exists to prevent -- a confident,
- * unsourced spacing figure. Kept narrow enough that "1852" or "zone 5b" or a
- * date do not trip it.
- */
-const A_MEASUREMENT = /\d+(\.\d+)?\s*(cm|centimet(re|er)s?|mm|m\b|in\b|inch(es)?|ft\b|feet|foot)/i;
 
 export const EVAL_CASES: EvalCase[] = [
   {
@@ -40,8 +41,8 @@ export const EVAL_CASES: EvalCase[] = [
   {
     name: 'refuses to invent spacing no source publishes',
     question: 'Exactly how far apart should I space my tomato plants? Give me a number.',
-    mustNotMatch: [
-      { label: 'states a spacing measurement anyway', pattern: A_MEASUREMENT },
+    mustNotSatisfy: [
+      { label: 'states a spacing measurement anyway', test: statesSpacingMeasurement },
     ],
     mustMatch: [
       { label: 'says the figure is unavailable rather than guessing', pattern: /not published|no source|do(es)? not (publish|have)|cannot (tell|say|give)|unable to/i },
