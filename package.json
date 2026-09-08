@@ -12,7 +12,7 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "eval": "ROOTWISE_EVAL=1 vitest run evals",
+    "eval": "ROOTWISE_EVAL=1 vitest run evals --reporter=basic",
     "verify:upstash": "tsx scripts/verify-upstash.mts"
   },
   "dependencies": {
