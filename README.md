@@ -77,6 +77,10 @@ A demo anyone can hit spends real money and is trivially abusable, so the budget
 
 Counter keys carry their own window stamp, so a new hour is simply a new key. That removes the classic hazard: an expiry that silently fails leaves a counter with no TTL, and a counter that never resets locks a visitor out permanently.
 
+**The ceiling is denominated in money, not tokens.** A turn that calls two tools sends their JSON results back as input on the next request, so input is usually the larger share of the bill — roughly 20 cents of input against 2 of output on a heavy turn. A cap that metered output alone would have left most of the spend unmetered. `ROOTWISE_DAILY_BUDGET_CENTS` sets it; the default of 100 allows on the order of fifteen questions a day.
+
+The stable prefix — tool schemas plus the system prompt, about 3.5k tokens — is marked for prompt caching, since it is otherwise resent on every iteration of the tool loop and again on every follow-up question.
+
 ## Testing
 
 ```bash

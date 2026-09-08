@@ -8,7 +8,7 @@ import { UpstashBudgetStore } from '@/lib/budget/upstash-store';
 function budgetAt(clock: { value: Date }, limits = {}) {
   return createBudget({
     store: new MemoryBudgetStore(() => clock.value.getTime()),
-    limits: { requestsPerIpPerHour: 3, dailyOutputTokens: 1000, ...limits },
+    limits: { requestsPerIpPerHour: 3, dailyCostCents: 100, ...limits },
     now: () => clock.value,
   });
 }
@@ -70,11 +70,11 @@ describe('createBudget', () => {
     await expect(budget.check({ ip: '2.2.2.2' })).resolves.toMatchObject({ allowed: true });
   });
 
-  it('blocks everyone once the shared daily token ceiling is spent', async () => {
+  it('blocks everyone once the shared daily spend ceiling is reached', async () => {
     const clock = { value: new Date('2026-09-08T10:00:00Z') };
     const budget = budgetAt(clock);
 
-    await budget.recordUsage(1200);
+    await budget.recordUsage({ inputTokens: 0, outputTokens: 8_000_000 });
 
     const decision = await budget.check({ ip: '9.9.9.9' });
     expect(decision).toMatchObject({ allowed: false, code: 'budget_exhausted' });
@@ -84,7 +84,7 @@ describe('createBudget', () => {
   it('releases the daily ceiling on the next UTC day', async () => {
     const clock = { value: new Date('2026-09-08T23:00:00Z') };
     const budget = budgetAt(clock);
-    await budget.recordUsage(1200);
+    await budget.recordUsage({ inputTokens: 0, outputTokens: 8_000_000 });
 
     expect(await budget.check({ ip: '9.9.9.9' })).toMatchObject({ allowed: false });
 
@@ -96,7 +96,7 @@ describe('createBudget', () => {
   it('lets a visitor with their own key past both limits', async () => {
     const clock = { value: new Date('2026-09-08T10:00:00Z') };
     const budget = budgetAt(clock);
-    await budget.recordUsage(99_999);
+    await budget.recordUsage({ inputTokens: 0, outputTokens: 8_000_000 });
 
     await expect(
       budget.check({ ip: '9.9.9.9', hasOwnKey: true }),
@@ -174,5 +174,52 @@ describe('createBudgetStore', () => {
     expect(createBudgetStore({ UPSTASH_REDIS_REST_URL: 'https://db.upstash.io' })).toBeInstanceOf(
       MemoryBudgetStore,
     );
+  });
+});
+
+describe('cost accounting', () => {
+  it('charges for input as well as output', async () => {
+    const { costCents } = await import('@/lib/budget/pricing');
+
+    // A tool-heavy turn is mostly input: 40k in, 800 out.
+    expect(costCents(40_000, 800)).toBeGreaterThan(costCents(0, 800));
+  });
+
+  it('prices input as the dominant half of a tool-heavy turn', async () => {
+    const { costCents } = await import('@/lib/budget/pricing');
+
+    // 40k in / 800 out is 20 cents of input against 2 of output. Metering
+    // output alone would have missed roughly nine tenths of the bill.
+    expect(costCents(40_000, 0)).toBe(20);
+    expect(costCents(0, 800)).toBe(2);
+    expect(costCents(40_000, 800)).toBe(22);
+  });
+
+  it('never rounds a real cost down to free', async () => {
+    const { costCents } = await import('@/lib/budget/pricing');
+
+    expect(costCents(1, 1)).toBe(1);
+    expect(costCents(0, 0)).toBe(0);
+  });
+
+  it('counts input toward the daily ceiling', async () => {
+    const clock = { value: new Date('2026-09-08T10:00:00Z') };
+    const budget = budgetAt(clock, { dailyCostCents: 5 });
+
+    // 2M input tokens is $10 -- far past a 5-cent ceiling, with zero output.
+    await budget.recordUsage({ inputTokens: 2_000_000, outputTokens: 0 });
+
+    await expect(budget.check({ ip: '1.2.3.4' })).resolves.toMatchObject({
+      allowed: false,
+      code: 'budget_exhausted',
+    });
+  });
+});
+
+describe('createBudgetStore naming', () => {
+  it('accepts the KV_REST_API_* names that Vercel injects', () => {
+    expect(
+      createBudgetStore({ KV_REST_API_URL: 'https://db.upstash.io', KV_REST_API_TOKEN: 'tok' }),
+    ).toBeInstanceOf(UpstashBudgetStore);
   });
 });

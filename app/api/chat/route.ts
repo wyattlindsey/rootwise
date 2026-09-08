@@ -28,7 +28,17 @@ const isDemoMode = process.env.ROOTWISE_FAKE_MODEL === '1';
  */
 const demoEnv = { ...process.env, PERENUAL_API_KEY: 'demo-fixture-key' };
 
-const budget = createBudget({ store: createBudgetStore(process.env) });
+/**
+ * The shared key's daily ceiling, in cents. A turn that calls two tools costs
+ * roughly 5-7 cents, so the default allows on the order of fifteen questions a
+ * day before the demo asks visitors to bring their own key.
+ */
+const dailyCostCents = Number(process.env.ROOTWISE_DAILY_BUDGET_CENTS ?? '100');
+
+const budget = createBudget({
+  store: createBudgetStore(process.env),
+  limits: Number.isFinite(dailyCostCents) ? { dailyCostCents } : {},
+});
 
 const deps: ChatDeps = {
   model: (apiKey?: string) =>

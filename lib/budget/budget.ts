@@ -1,15 +1,24 @@
+import { costCents } from './pricing';
 import type { BudgetStore } from './store';
 
 export interface BudgetLimits {
   /** Questions one visitor may ask per hour on the shared key. */
   requestsPerIpPerHour: number;
-  /** Output tokens the shared key will spend across all visitors per UTC day. */
-  dailyOutputTokens: number;
-}
+  /**
+   * What the shared key may spend per UTC day, in cents.
+   *
+   * Denominated in money rather than tokens because a turn that calls two
+   * tools sends their JSON results back as input on the next request, so input
+   * is usually the larger half of the bill. A token cap that counted only
+   * output would leave most of the spend unmetered.
+   */
+  dailyCostCents: number;
+};
 
 export const DEFAULT_LIMITS: BudgetLimits = {
   requestsPerIpPerHour: 10,
-  dailyOutputTokens: 200_000,
+  // A deliberately small default: this is a portfolio demo, not a service.
+  dailyCostCents: 100,
 };
 
 export interface BudgetRequest {
@@ -27,7 +36,9 @@ export interface BudgetDecision {
 
 export interface Budget {
   check(request: BudgetRequest): Promise<BudgetDecision>;
-  recordUsage(outputTokens: number): Promise<void>;
+  recordUsage(usage: { inputTokens: number; outputTokens: number }): Promise<void>;
+  /** Cents spent so far today, for diagnostics. */
+  spentToday(): Promise<number>;
 }
 
 export interface CreateBudgetOptions {
@@ -49,7 +60,7 @@ function hourKey(ip: string, at: Date): string {
 }
 
 function dayKey(at: Date): string {
-  return `tokens:${at.toISOString().slice(0, 10)}`;
+  return `cost:${at.toISOString().slice(0, 10)}`;
 }
 
 /**
@@ -76,7 +87,7 @@ export function createBudget(options: CreateBudgetOptions): Budget {
       const at = now();
 
       const spent = await store.get(dayKey(at));
-      if (spent >= limits.dailyOutputTokens) {
+      if (spent >= limits.dailyCostCents) {
         return {
           allowed: false,
           code: 'budget_exhausted',
@@ -101,10 +112,15 @@ export function createBudget(options: CreateBudgetOptions): Budget {
       return { allowed: true };
     },
 
-    async recordUsage(outputTokens) {
-      if (outputTokens > 0) {
-        await store.incrementBy(dayKey(now()), outputTokens, DAY_SECONDS);
+    async recordUsage(usage) {
+      const cents = costCents(usage.inputTokens, usage.outputTokens);
+      if (cents > 0) {
+        await store.incrementBy(dayKey(now()), cents, DAY_SECONDS);
       }
+    },
+
+    async spentToday() {
+      return store.get(dayKey(now()));
     },
   };
 }

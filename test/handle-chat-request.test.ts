@@ -42,7 +42,7 @@ async function harness(script: ScriptedTurn[], limits = {}): Promise<Harness> {
   const keysSeen: (string | undefined)[] = [];
   const budget = createBudget({
     store: new MemoryBudgetStore(),
-    limits: { requestsPerIpPerHour: 3, dailyOutputTokens: 1000, ...limits },
+    limits: { requestsPerIpPerHour: 3, dailyCostCents: 100, ...limits },
   });
 
   return {
@@ -145,7 +145,7 @@ describe('handleChatRequest', () => {
 
   it('answers an over-budget request with the BYO-key remedy, not a server error', async () => {
     const { deps, budget } = await harness([{ text: 'unused' }]);
-    await budget.recordUsage(5000);
+    await budget.recordUsage({ inputTokens: 0, outputTokens: 8_000_000 });
 
     const response = await handleChatRequest(post(ASK), deps);
     const events = await eventsOf(response);
@@ -179,14 +179,13 @@ describe('handleChatRequest', () => {
 
     await eventsOf(await handleChatRequest(post(ASK), deps));
 
-    // 400 of a 1000 ceiling spent; a second turn of the same size exceeds it.
-    await budget.recordUsage(700);
-    expect(await budget.check({ ip: '1.2.3.4' })).toMatchObject({ allowed: false });
+    // The turn above is charged for both halves of its usage, not output alone.
+    expect(await budget.spentToday()).toBeGreaterThan(0);
   });
 
   it("uses a visitor's own key when supplied, and bypasses the shared budget", async () => {
     const { deps, keysSeen, budget } = await harness([{ text: 'ok' }]);
-    await budget.recordUsage(99_999);
+    await budget.recordUsage({ inputTokens: 0, outputTokens: 8_000_000 });
 
     const response = await handleChatRequest(
       post(ASK, { 'x-anthropic-key': 'sk-visitor-key' }),

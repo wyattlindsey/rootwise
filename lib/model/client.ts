@@ -53,7 +53,11 @@ export function createAnthropicModelClient(options: ModelClientOptions = {}): Mo
         {
           model: MODEL,
           max_tokens: MAX_TOKENS,
-          system,
+          // Tools render before system, so one breakpoint here caches the
+          // whole stable prefix -- roughly 3.5k tokens of tool schemas and
+          // instructions that are otherwise resent on every iteration of the
+          // tool loop, and again on every follow-up question.
+          system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
           messages,
           tools,
           thinking: { type: 'adaptive' },

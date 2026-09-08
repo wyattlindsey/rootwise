@@ -154,7 +154,7 @@ export async function handleChatRequest(request: Request, deps: ChatDeps): Promi
       // Only the shared key is metered; a visitor on their own key spends
       // their own budget.
       if (event.type === 'done' && !hasOwnKey && event.usage !== undefined) {
-        await deps.budget.recordUsage(event.usage.outputTokens);
+        await deps.budget.recordUsage(event.usage);
       }
       yield event;
     }

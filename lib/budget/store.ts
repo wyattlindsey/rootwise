@@ -19,8 +19,11 @@ export type BudgetEnv = Record<string, string | undefined>;
  * makes the daily ceiling mean anything.
  */
 export function createBudgetStore(env: BudgetEnv): BudgetStore {
-  const url = env['UPSTASH_REDIS_REST_URL']?.trim();
-  const token = env['UPSTASH_REDIS_REST_TOKEN']?.trim();
+  // Vercel's Upstash marketplace integration injects KV_REST_API_* names,
+  // while a database created directly at upstash.com gives UPSTASH_*. Accept
+  // either so provisioning either way just works.
+  const url = (env['UPSTASH_REDIS_REST_URL'] ?? env['KV_REST_API_URL'])?.trim();
+  const token = (env['UPSTASH_REDIS_REST_TOKEN'] ?? env['KV_REST_API_TOKEN'])?.trim();
 
   return url !== undefined && url !== '' && token !== undefined && token !== ''
     ? new UpstashBudgetStore({ url, token })
