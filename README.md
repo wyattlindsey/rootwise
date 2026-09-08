@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# rootwise
 
-## Getting Started
+An AI gardening advisor that answers free-form questions using real horticultural data — and tells you when the data doesn't exist.
 
-First, run the development server:
+**[Live demo →](https://rootwise-deploy.vercel.app)**
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+![rootwise answering a companion-planting question, showing its tool calls, sources, and caveats](public/poster/rootwise.png)
+
+## Why this exists
+
+Ask any chatbot when to plant tomatoes and you'll get a confident answer. Some of it is true. None of it is traceable, and the parts it invents look exactly like the parts it knows.
+
+rootwise is built on [plant-intel-mcp](https://github.com/wyattlindsey/plant-intel-mcp), an MCP server designed so that gaps in the data stay visible. This app's job is to stop the model papering over them, and to show the reader it didn't:
+
+- **Every tool call is on screen** — which tool ran, what it was asked, and the raw JSON it returned.
+- **Every source is credited**, with its licence.
+- **It refuses to invent.** No source behind these tools publishes plant spacing, days-to-maturity, or frost-hardiness class. Asked for one, it says so and points you at a seed packet.
+- **Caveats survive.** When the frost model returns "these are 9 km gridded reanalysis values, not station data", that reaches the answer instead of being smoothed away.
+
+In the screenshot above, `verdict: "bad"` and `mechanism: "shared-family"` are real output from the MCP server. So is the four-item caveat list. Only the prose is the model.
+
+## How it works
+
+```
+Browser ──SSE──> /api/chat ──> tool loop ──> Claude (Opus 5)
+                                   │
+                                   └──> MCP client ──in-memory──> plant-intel-mcp server
+                                                                        │
+                                                        Perenual · Open-Meteo · Permapeople
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app **hosts the MCP server in its own process** and talks to it as a real MCP client over an in-memory transport — full handshake, `tools/list`, `tools/call`. It's a genuine protocol client that simply skips the pipe, which means no subprocess, no open port, and no credential leaving the process.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+MCP advertises tools as JSON Schema and the Messages API accepts JSON Schema, so the bridge needs no translation layer.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+A few decisions worth explaining:
 
-## Learn More
+**A hand-written tool loop, not the SDK's tool runner.** Three reasons the runner doesn't cover: tool calls and results must be emitted in strict order relative to streamed text because the UI renders that order; the loop needs a seam between iterations to stop on an abort or a spent budget; and stacking the beta runner on beta fallbacks is one beta dependency more than this needs.
 
-To learn more about Next.js, take a look at the following resources:
+**The model client is injected.** Exactly as the MCP server injects `fetch` and its cache. That's what makes the entire UI and integration suite deterministic, instant, and free — a scripted fake replaces Claude while the *real* MCP server still runs underneath, so the tool output under test is genuine.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Refusals stream as SSE, not JSON.** The status code still says what happened, but the client keeps one way to read a response, so a budget refusal renders through the same path as any other error.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Running it
 
-## Deploy on Vercel
+```bash
+npm install
+npm run dev:demo     # scripted model + fixture data: no keys, no network
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+For live answers you need two keys:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+ANTHROPIC_API_KEY=…      # https://console.anthropic.com
+PERENUAL_API_KEY=…       # https://perenual.com/docs/api (free: 100 requests/day)
+npm run dev
+```
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | live mode | The model. |
+| `PERENUAL_API_KEY` | live mode | Species data. Free tier is 100 requests/day, species 1–3000, non-commercial. |
+| `PERMAPEOPLE_KEY_ID` / `_SECRET` | no | Adds documented companion listings (CC BY-SA 4.0). |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | no | Shared spend cap across instances. Without it the cap only holds per-instance. |
+| `PLANT_INTEL_CACHE_DIR` | no | Set to `/tmp/plant-intel` on serverless, where the filesystem is otherwise read-only. |
+| `ROOTWISE_FAKE_MODEL` | no | `1` for demo mode. Self-contained — needs no other variable. |
+
+## Guarding a public AI endpoint
+
+A demo anyone can hit spends real money and is trivially abusable, so the budget layer is load-bearing rather than decorative:
+
+- A per-IP hourly limit, so no one visitor monopolises the shared key.
+- A daily token ceiling across all visitors that holds however traffic arrives.
+- On exhaustion the UI offers to use the visitor's own key, so the demo degrades instead of going dark. That key is used for one request and is never logged, stored, or counted against the shared budget.
+
+Counter keys carry their own window stamp, so a new hour is simply a new key. That removes the classic hazard: an expiry that silently fails leaves a counter with no TTL, and a counter that never resets locks a visitor out permanently.
+
+## Testing
+
+```bash
+npm test          # 115 unit, integration, and component tests
+npm run e2e       # 6 Playwright browser tests
+npm run typecheck
+npm run eval      # opt-in; spends real API credit
+```
+
+| Layer | Covers |
+| --- | --- |
+| Unit | Tool bridging, SSE codec, budget arithmetic, prompt assembly, state folding |
+| Integration | `/api/chat` end to end, scripted model against the **real** in-process MCP server |
+| Component | Streaming text, tool chips, sources, caveats, error and cap states |
+| Browser | The full flow in Chromium, fully offline |
+| Eval | Real Claude: asserts tool selection and refusal-to-invent |
+
+The browser suite runs against demo mode — scripted model, fixture upstreams — so it is deterministic and free. The MCP server underneath is real and does its real mapping work, so what's asserted is genuine output. Without that, one e2e run would spend the entire daily Perenual budget.
+
+## Licence
+
+MIT. Data retrieved through the MCP server remains under its own sources' terms — see [plant-intel-mcp](https://github.com/wyattlindsey/plant-intel-mcp#sources-and-their-limits).
