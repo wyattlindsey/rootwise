@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>rootwise — AI plant advisor</title>
+    <meta
+      name="description"
+      content="An AI gardening advisor that answers with real horticultural data and says when the data does not exist."
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #fbfbf9;
+        --fg: #1a1a17;
+        --muted: #5f5f57;
+        --line: #e2e2dc;
+        --accent: #047857;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14140f;
+          --fg: #f2f2ec;
+          --muted: #a3a399;
+          --line: #2e2e26;
+          --accent: #34d399;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px 40px; }
+      h1 { margin: 0 0 4px; font-size: 1.5rem; }
+      p.lede { margin: 0 0 16px; color: var(--muted); max-width: 62ch; }
+      .links { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+      .links a {
+        display: inline-block;
+        padding: 7px 13px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: inherit;
+        text-decoration: none;
+        font-size: 0.875rem;
+      }
+      .links a.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .links a:hover { border-color: var(--accent); }
+      .frame {
+        position: relative;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--bg);
+        height: min(80vh, 900px);
+      }
+      iframe { width: 100%; height: 100%; border: 0; display: block; }
+      noscript p { padding: 20px; color: var(--muted); }
+      footer { margin-top: 16px; color: var(--muted); font-size: 0.8125rem; max-width: 70ch; }
+      footer a { color: inherit; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>rootwise</h1>
+      <p class="lede">
+        An AI gardening advisor that answers from real horticultural data, shows every tool call
+        and source it used, and tells you plainly when the data does not exist.
+      </p>
+
+      <nav class="links">
+        <a class="primary" href="https://rootwise-deploy.vercel.app" target="_blank" rel="noopener">
+          Open full screen ↗
+        </a>
+        <a href="https://github.com/wyattlindsey/rootwise" target="_blank" rel="noopener">
+          App source
+        </a>
+        <a href="https://github.com/wyattlindsey/plant-intel-mcp" target="_blank" rel="noopener">
+          MCP server source
+        </a>
+      </nav>
+
+      <div class="frame">
+        <iframe
+          src="https://rootwise-deploy.vercel.app"
+          title="rootwise — AI plant advisor"
+          loading="lazy"
+          allow="fullscreen"
+          referrerpolicy="strict-origin-when-cross-origin"
+        ></iframe>
+        <noscript>
+          <p>
+            This demo needs JavaScript.
+            <a href="https://rootwise-deploy.vercel.app">Open it directly</a>.
+          </p>
+        </noscript>
+      </div>
+
+      <footer>
+        Running in demo mode: the model is scripted and the upstream data is fixtures, so it costs
+        nothing and cannot be abused. The tool calls, sources, and caveats it shows are real output
+        from the MCP server.
+      </footer>
+    </div>
+  </body>
+</html>
