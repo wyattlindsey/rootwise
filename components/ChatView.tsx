@@ -16,12 +16,16 @@ const SUGGESTIONS = [
 export function ChatView({ demoMode = false }: { demoMode?: boolean }): React.JSX.Element {
   const { state, location, setLocation, apiKey, setApiKey, send, stop } = useChat();
   const [draft, setDraft] = useState('');
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const streaming = state.status === 'streaming';
 
+  // Scroll the list's own box rather than calling scrollIntoView on a marker:
+  // scrollIntoView also scrolls every ancestor, which moves the host page when
+  // this app is embedded in an iframe.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const list = listRef.current;
+    if (list) list.scrollTop = list.scrollHeight;
   }, [state.messages]);
 
   async function submit(text: string): Promise<void> {
@@ -55,7 +59,8 @@ export function ChatView({ demoMode = false }: { demoMode?: boolean }): React.JS
       </header>
 
       <div
-        className="flex-1 space-y-4 overflow-y-auto pb-4"
+        ref={listRef}
+        className="flex-1 space-y-4 overflow-y-auto scroll-smooth pb-4"
         aria-live="polite"
         aria-busy={streaming}
       >
@@ -108,8 +113,6 @@ export function ChatView({ demoMode = false }: { demoMode?: boolean }): React.JS
             </p>
           </div>
         )}
-
-        <div ref={bottomRef} />
       </div>
 
       <form
