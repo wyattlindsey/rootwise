@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:demo": "ROOTWISE_FAKE_MODEL=1 PERENUAL_API_KEY=sk-demo next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
