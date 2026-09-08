@@ -1,0 +1,11 @@
+{
+  "title": "rootwise",
+  "pitch": "An AI gardening advisor that answers from real horticultural data — and says so when the data doesn't exist.",
+  "tags": ["AI", "MCP", "full-stack"],
+  "tech": ["Next.js", "TypeScript", "Claude API", "Model Context Protocol", "Playwright"],
+  "repo": "https://github.com/wyattlindsey/rootwise",
+  "live": "https://rootwise-deploy.vercel.app",
+  "poster": "/posters/rootwise.png",
+  "embed": "iframe",
+  "note": "Server-backed, so it deploys to Vercel rather than Pages. Point the iframe at the live URL directly, not at wyattlindsey.github.io/rootwise/ — that page is itself an embed shell and would nest one iframe inside another. The app sets frame-ancestors to allow this hub."
+}
