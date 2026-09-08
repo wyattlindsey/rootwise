@@ -240,3 +240,32 @@ describe('handleChatRequest', () => {
     expect(events.at(-1)).toMatchObject({ type: 'error', code: 'model_error' });
   });
 });
+
+describe('demo mode', () => {
+  it('reaches the fixtures without any Perenual key configured', async () => {
+    // Regression: demo mode used to require PERENUAL_API_KEY as well, so a
+    // deployment set up with only ROOTWISE_FAKE_MODEL had every tool call fail.
+    const host = await createMcpHost({
+      env: { PERENUAL_API_KEY: 'demo-fixture-key', PLANT_INTEL_CACHE_DISABLED: '1' },
+      fetch: async () => new Response(JSON.stringify(TOMATO), { status: 200 }),
+    });
+    hosts.push(host);
+
+    const outcome = await host.callTool('plant_details', { plant: 'perenual:1852' });
+
+    expect(outcome.ok).toBe(true);
+  });
+
+  it('fails every tool when no key is configured at all', async () => {
+    const host = await createMcpHost({
+      env: { PLANT_INTEL_CACHE_DISABLED: '1' },
+      fetch: async () => new Response(JSON.stringify(TOMATO), { status: 200 }),
+    });
+    hosts.push(host);
+
+    const outcome = await host.callTool('plant_details', { plant: 'perenual:1852' });
+
+    expect(outcome.ok).toBe(false);
+    expect(String(outcome.result)).toContain('PERENUAL_API_KEY');
+  });
+});

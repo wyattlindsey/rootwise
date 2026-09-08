@@ -17,6 +17,17 @@ export const maxDuration = 60;
 /** Demo mode: scripted model, fixture upstreams, no key and no network. */
 const isDemoMode = process.env.ROOTWISE_FAKE_MODEL === '1';
 
+/**
+ * Demo mode supplies its own placeholder credential.
+ *
+ * The MCP server gates its tools on a Perenual key being present, so without
+ * this the fixtures are never reached and every tool answers "PERENUAL_API_KEY
+ * is not set" -- which is what a demo deployment configured with only
+ * ROOTWISE_FAKE_MODEL actually did. Demo mode should need exactly one variable,
+ * not two.
+ */
+const demoEnv = { ...process.env, PERENUAL_API_KEY: 'demo-fixture-key' };
+
 const budget = createBudget({ store: createBudgetStore(process.env) });
 
 const deps: ChatDeps = {
@@ -24,7 +35,8 @@ const deps: ChatDeps = {
     isDemoMode
       ? createFakeModelClient(demoScript())
       : createAnthropicModelClient(apiKey === undefined ? {} : { apiKey }),
-  host: () => getMcpHost(isDemoMode ? { fetch: createFixtureFetch() } : {}),
+  host: () =>
+    getMcpHost(isDemoMode ? { env: demoEnv, fetch: createFixtureFetch() } : {}),
   budget,
 };
 
