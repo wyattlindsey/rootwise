@@ -30,9 +30,9 @@ export function demoScript(): ScriptedTurn[] {
         'Keep them apart. Tomato and potato are both Solanaceae, so they share soilborne ' +
         'diseases and compete for the same rotation slot — planting them together concentrates ' +
         'the risk, and they also share aphids.\n\n' +
-        'For your site, the median last spring frost is 28 April and the first autumn frost is ' +
-        '28 October, giving about a 183-day season. Tomatoes are tender, so late April is the ' +
-        'earliest safe transplant.\n\n' +
+        'For Minneapolis (44.98, -93.27), the median last spring frost is 28 April and the ' +
+        'first autumn frost is 28 October, giving about a 183-day season. Tomatoes are tender, ' +
+        'so late April is the earliest safe transplant.\n\n' +
         'One thing I cannot tell you: how many days your variety needs to mature. None of the ' +
         'sources behind these tools publish days-to-maturity, so a number here would be a guess. ' +
         'Check your seed packet — it will say — and I can work the sowing date back from it.\n\n' +
