@@ -8,8 +8,8 @@
  */
 import { readFileSync } from 'node:fs';
 
-import { createBudget } from '../lib/budget/budget.ts';
-import { createBudgetStore } from '../lib/budget/store.ts';
+import { createBudget } from '../lib/budget/budget';
+import { createBudgetStore } from '../lib/budget/store';
 
 const env: Record<string, string> = {};
 for (const line of readFileSync('.env.local', 'utf8').split('\n')) {
