@@ -10,6 +10,13 @@ export const UNPUBLISHED_FIELDS = [
   'frost-hardiness class',
 ] as const;
 
+/**
+ * The highest species id Perenual's free plan serves details for. Search still
+ * returns ids above it, and a details lookup for one fails with HTTP 429 --
+ * which reads as a quota that will reset, when it never will on that plan.
+ */
+export const FREE_PLAN_MAX_SPECIES_ID = 3000;
+
 export interface PromptLocation {
   latitude: number;
   longitude: number;
@@ -49,6 +56,13 @@ export function buildSystemPrompt(options: SystemPromptOptions): string {
     `You have these tools: ${options.toolNames.join(', ')}.`,
     'Prefer an id returned by search_plants over a name when calling another tool: resolving a',
     'name costs an extra upstream request against a small daily budget.',
+    '',
+    'The plant database may be on a free plan that only serves details for species ids 1 to',
+    `${String(FREE_PLAN_MAX_SPECIES_ID)}, although search_plants still returns higher ids. When more than one`,
+    'search result fits the question, prefer one inside that range. If a lookup for a higher id',
+    'fails with a rate-limit error (HTTP 429), treat it as a plan limit rather than a quota that',
+    'resets: do not retry it and do not tell the visitor to try again later. Say this plant is',
+    'outside what the data plan covers.',
     '',
     '## How to answer',
     '',
