@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import type { SystemPromptOptions } from '@/lib/chat/system-prompt';
-import { UNPUBLISHED_FIELDS, buildSystemPrompt } from '@/lib/chat/system-prompt';
+import {
+  FREE_PLAN_MAX_SPECIES_ID,
+  UNPUBLISHED_FIELDS,
+  buildSystemPrompt,
+} from '@/lib/chat/system-prompt';
 
 const TOOLS = ['search_plants', 'plant_details', 'companion_check', 'planting_window'];
 
@@ -39,6 +43,20 @@ describe('buildSystemPrompt', () => {
 
   it('requires saying so plainly when the tools cannot answer', () => {
     expect(prompt()).toMatch(/say so|cannot answer|do not know/i);
+  });
+
+  it('names the free-plan id ceiling so the model can prefer a result it can look up', () => {
+    const text = prompt();
+
+    expect(text).toContain(String(FREE_PLAN_MAX_SPECIES_ID));
+    expect(text).toMatch(/prefer one inside that range/i);
+  });
+
+  it('stops a plan-limit 429 being reported as a quota that resets', () => {
+    const text = prompt();
+
+    expect(text).toMatch(/plan limit rather than a quota/i);
+    expect(text).toMatch(/do not tell the visitor to try again later/i);
   });
 
   it('says no location is known and directs the model to ask for one', () => {
